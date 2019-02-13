@@ -29,9 +29,9 @@ set -e
              echo "Can't find binary file at ${binary_path}"
              exit 252
            fi
-	   if [ ${TRAVIS_OS_NAME} -eq "linux" ]; then
+	   if [ ${TRAVIS_OS_NAME} = "linux" ]; then
               sudo apt-get install jq > /dev/null 2>&1 || { echo "JQ install failed Please email to contact@apptest.ai"; exit 256;}
-	   elif [ ${TRAVIS_OS_NAME} - eq "osx" ]; then
+	   elif [ ${TRAVIS_OS_NAME} = "osx" ]; then
 	      brew install jq > /dev/null 2>&1 || { echo "jq install failed please email to contact@apptest.ai"; exit 256; }
 	   else
 	      echo "unknown os name : ${TRAVIS_OS_NAME} "
