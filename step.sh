@@ -108,7 +108,7 @@ if ${waiting_for_test_results}; then
   echo "|                        Device                        |  Result  |" >> ${test_result_txt_file_path}
   echo "+-----------------------------------------------------------------+" >> ${test_result_txt_file_path}
   echo ${TEST_RESULT} | jq -r \
-       'if has("system-out") then "\""+ .name + "\" \"\\033[1;32m Passed \\033[1;0m\"" else "\"" + .name + "\"\" \\033[1;31m Failed \\033[1;0m\" " end ' \
+       'if has("system-out") then "\""+ .name + "\" \"\\033[1;32m Passed \\033[1;0m\"" else "\"" + .name + "\" \"\\033[1;31m Failed \\033[1;0m\"" end ' \
        | xargs printf "| %-52s | %b | \n"  >> ${test_result_txt_file_path}
   echo "+-----------------------------------------------------------------+" >> ${test_result_txt_file_path}
 

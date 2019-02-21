@@ -1,0 +1,28 @@
+version: 2.1
+description: 'apptest.ai Testbot orbs for mobile app'
+
+commands:
+  run-test:
+    parameters:
+      binary_path:
+        description: test binary(*.ipk or *.ipa) file path 
+        type: string
+      project_id:
+        description: project id in apptest.ai 
+        type: string
+      test_result_path:
+        description: where to save test results file
+        type: string
+        default: 'test-results'
+      waiting_for_test_results:
+        description: If you want build process waiting for apptest.ai test result, type true 
+        type: string
+        default: 'true'
+    steps:
+      - run: 
+         command: |
+           export binary_path=<<parameters.binary_path>> project_id=<<parameters.project_id>>  
+           export test_result_path=<<parameters.test_result_path>> 
+           export waiting_for_test_results=<<parameters.waiting_for_test_results>>
+           git clone https://github.com/apptestai/ci_addon
+           bash ./ci_addon/step.sh
