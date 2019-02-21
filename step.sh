@@ -32,7 +32,7 @@ fi
 
 OS=$( uname )
 if [ ${OS} = "Linux" ]; then
-  sudo apt-get install jq > /dev/null 2>&1 || { echo "JQ install failed Please email to contact@apptest.ai"; exit 256;}
+  sudo apt-get install jq  || { echo "JQ install failed Please email to contact@apptest.ai"; exit 256;}
 elif [ ${OS} = "Darwin" ]; then
   brew install jq > /dev/null 2>&1 || { echo "jq install failed please email to contact@apptest.ai"; exit 256; }
 else
