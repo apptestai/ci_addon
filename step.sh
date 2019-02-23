@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 set -e
+
+install_jq(){
+  OS=$( uname )
+  if [ ${OS} = "Linux" ]; then
+    sudo add-apt-repository universe >/dev/null 2>&1
+    sudo apt-get update > /dev/null 2>&1
+    sudo apt-get install jq > /dev/null 2>&1 || { echo "JQ install failed Please email to contact@apptest.ai"; exit 256;}
+  elif [ ${OS} = "Darwin" ]; then
+    brew install jq > /dev/null 2>&1 || { echo "jq install failed please email to contact@apptest.ai"; exit 256; }
+  else
+    echo "Unknown OS name : ${OS} please contact contact@apptest.ai "
+    exit 256
+  fi
+}
+
+
 access_key=${APPTEST_AI_ACCESS_KEY}
 
 if [ -z "${binary_path}" ]; then
@@ -30,15 +46,7 @@ if [ ! -f "${binary_path}" ]; then
   exit 252
 fi
 
-OS=$( uname )
-if [ ${OS} = "Linux" ]; then
-  sudo apt-get install jq  || { echo "JQ install failed Please email to contact@apptest.ai"; exit 256;}
-elif [ ${OS} = "Darwin" ]; then
-  brew install jq > /dev/null 2>&1 || { echo "jq install failed please email to contact@apptest.ai"; exit 256; }
-else
-  echo "Unknown os : ${OS} please contact contact@apptest.ai "
-  exit 256
-fi
+jq --version > /dev/null 2>&1 || install_jq 
 
 serviceHost=https://api.apptest.ai
 apk_file_d='apk_file=@'\"${binary_path}\"
