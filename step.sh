@@ -6,7 +6,7 @@ install_jq(){
   if [ ${OS} = "Linux" ]; then
     sudo add-apt-repository universe >/dev/null 2>&1
     sudo apt-get update > /dev/null 2>&1
-    sudo apt-get install jq > /dev/null 2>&1 || { echo "JQ install failed Please email to contact@apptest.ai"; exit 256;}
+    sudo apt-get install -y jq > /dev/null 2>&1 || { echo "JQ install failed Please email to contact@apptest.ai"; exit 256;}
   elif [ ${OS} = "Darwin" ]; then
     brew install jq > /dev/null 2>&1 || { echo "jq install failed please email to contact@apptest.ai"; exit 256; }
   else
