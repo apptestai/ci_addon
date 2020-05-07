@@ -10,6 +10,30 @@ commands:
       project_id:
         description: project id in apptest.ai 
         type: string
+      testset_name:
+        description: test set name
+        type: string
+        default: ''
+      time_limit:
+        description: test time limit (minutes) (range 5 - 30). If the value is empty or less than 5, it follows the time-limit saved in the project.
+        type: string
+        default: '0'
+      use_vo:
+        description: Whether AT&T Video Optimizer(ARO) is used. (true|false)
+        type: string
+        default: 'false'
+      callback:
+        description: Callback URL to be called after test completion.
+        type: string
+        default: ''
+      login_id:
+        description: ID of the test account required to test the app. If the value is empty, it follows the time-limit saved in the project.
+        type: string
+        default: ''
+      login_pw:
+        description: Password of the test account required to test the app. If the value is empty, it follows the time-limit saved in the project.
+        type: string
+        default: ''
       test_result_path:
         description: where to save test results file
         type: string
@@ -21,7 +45,14 @@ commands:
     steps:
       - run: 
          command: |
-           export binary_path=<<parameters.binary_path>> project_id=<<parameters.project_id>>  
+           export binary_path=<<parameters.binary_path>>
+           export project_id=<<parameters.project_id>>
+           export testset_name=<<parameters.testset_name>>
+           export time_limit=<<parameters.time_limit>>
+           export use_vo=<<parameters.use_vo>>
+           export callback=<<parameters.callback>>
+           export login_id=<<parameters.login_id>>
+           export login_pw=<<parameters.login_pw>>
            export test_result_path=<<parameters.test_result_path>> 
            export waiting_for_test_results=<<parameters.waiting_for_test_results>>
            git clone https://github.com/forcemax/ci_addon

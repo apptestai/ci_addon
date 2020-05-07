@@ -15,7 +15,6 @@ install_jq(){
   fi
 }
 
-
 access_key=${APPTEST_AI_ACCESS_KEY}
 
 if [ -z "${binary_path}" ]; then
@@ -24,12 +23,12 @@ if [ -z "${binary_path}" ]; then
 fi
 
 if [ -z "${project_id}" ]; then
-  echo "Apptest.ai project id is needed"
+  echo "apptest.ai project id is needed"
   exit 254
 fi
 
 if [ -z "${access_key}" ]; then
-  echo "apptest ai access key should be set as APPTEST_AI_ACCESS_KEY"
+  echo "apptest.ai access key should be set as APPTEST_AI_ACCESS_KEY"
   exit 253
 fi
 
@@ -46,13 +45,44 @@ if [ ! -f "${binary_path}" ]; then
   exit 252
 fi
 
+if [ -z "${use_vo}" ]; then
+  use_vo="false"
+fi
+
+if [ -z "${testset_name}" ]; then
+  COMMIT_MESSAGE=$(git log --format=%B -n 1 $CIRCLE_SHA1)
+  testset_name="circleci - ${COMMIT_MESSAGE}"
+fi
+
+testset_name_len=${#testset_name}
+if [ $testset_name_len -gt 99 ]; then
+  testset_name=$(echo ${testset_name} | cut -c1-99)
+fi
+
 jq --version > /dev/null 2>&1 || install_jq 
 
-serviceHost=https://api.apptest.ai
-apk_file_d='apk_file=@'\"${binary_path}\"
-data_d='data={"pid":'${project_id}',"test_set_name":"circleci"}'
-testRunUrl=${serviceHost}/openapi/v1/test/run
-HTTP_RESPONSE=$(curl --silent --write-out "HTTPSTATUS:%{http_code}" -F ${apk_file_d} -F ${data_d} -u ${access_key} ${testRunUrl})
+#apk_file_d='apk_file=@'\"${binary_path}\"
+#data_d='data={"pid":'${project_id}',"test_set_name":"circleci"}'
+app_file_d="app_file=@\"${binary_path}\""
+
+data_d="data={\"pid\": ${project_id}"
+data_d="${data_d}, \"testset_name\": \"${testset_name}\""
+if [ ! -z "$time_limit" ]; then
+  if [[ $time_limit -gt 4 && $time_limit -lt 31 ]]; then
+    data_d="${data_d}, \"time_limit\": ${time_limit}"
+  fi
+fi
+data_d="${data_d}, \"use_vo\": ${use_vo}"
+if [ ! -z "$callback" ]; then
+  data_d="${data_d}, \"callback\": \"${callback}\""
+fi
+if [[ ! -z "${login_id}" && ! -z "${login_pw}" ]]; then
+  data_d="${data_d}, \"credentials\": { \"login_id\": \"${login_id}\", \"login_pw\": \"${login_pw}\"}"
+fi
+data_d="${data_d}}"
+
+testRunUrl="https://api.apptest.ai/openapi/v2/testset"
+HTTP_RESPONSE=$(curl --silent --write-out "HTTPSTATUS:%{http_code}" -F "${app_file_d}" -F "${data_d}" --user ${access_key} ${testRunUrl})
 
 HTTP_BODY=$(echo "${HTTP_RESPONSE}" | sed -e 's/HTTPSTATUS\:.*//g')
 HTTP_STATUS=$(echo "${HTTP_RESPONSE}" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
@@ -68,16 +98,16 @@ if [ ${create_test_result} == 'fail' ]; then
   exit 250
 fi
 
-tsid=$(echo "${HTTP_BODY}" | jq -r .data.tsid)
+tsid=$(echo "${HTTP_BODY}" | jq -r .data.testset_id)
 printf 'Your test request is accepted - Test Run id : \033[1;32m %d \033[1;0m \n' ${tsid}
 
 
 start_time=$(date +%s)
-testCompleteCheckUrl=${serviceHost}/openapi/v1/project/${project_id}/testset/${tsid}/result/all
+testCompleteCheckUrl="https://api.apptest.ai/openapi/v2/testset/${tsid}"
 
-TEST_RUN_RESULT=false
-while ! ${TEST_RUN_RESULT} && ${waiting_for_test_results}; do
-  HTTP_RESPONSE=$(curl --silent --write-out "HTTPSTATUS:%{http_code}" -u ${access_key} ${testCompleteCheckUrl})
+TEST_RUN_RESULT="Running"
+while [ "${TEST_RUN_RESULT}" != "Complete" ] && ${waiting_for_test_results}; do
+  HTTP_RESPONSE=$(curl --silent --write-out "HTTPSTATUS:%{http_code}" --user ${access_key} ${testCompleteCheckUrl})
   HTTP_BODY=$(echo "${HTTP_RESPONSE}" | sed -e 's/HTTPSTATUS\:.*//g')
   HTTP_STATUS=$(echo "${HTTP_RESPONSE}" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
   if [ ! ${HTTP_STATUS} -eq 200  ]; then
@@ -85,9 +115,8 @@ while ! ${TEST_RUN_RESULT} && ${waiting_for_test_results}; do
     exit 249
   fi
 
-  TEST_RUN_RESULT=$(echo "${HTTP_BODY}" | jq -r .complete)
-  if ${TEST_RUN_RESULT}; then
-    RESULT_DATA=$(echo "${HTTP_BODY}" | jq -r .data)
+  TEST_RUN_RESULT=$(echo "${HTTP_BODY}" | jq -r .data.testset_status)
+  if [ "${TEST_RUN_RESULT}" == "Complete" ]; then
     break
   fi
 
@@ -96,6 +125,17 @@ while ! ${TEST_RUN_RESULT} && ${waiting_for_test_results}; do
   wait_time=$((current_time - start_time))
   echo "Waiting for Test Run(ID: ${tsid}) completed for ${wait_time}s"
 done
+
+getTestResultUrl="https://api.apptest.ai/openapi/v2/testset/${tsid}/result"
+HTTP_RESPONSE=$(curl --silent --write-out "HTTPSTATUS:%{http_code}" --user ${access_key} ${getTestResultUrl})
+HTTP_BODY=$(echo "${HTTP_RESPONSE}" | sed -e 's/HTTPSTATUS\:.*//g')
+HTTP_STATUS=$(echo "${HTTP_RESPONSE}" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+
+if [ ! ${HTTP_STATUS} -eq 200  ]; then
+  echo "Error [HTTP status: ${HTTP_STATUS}]"
+  exit 248
+fi
+RESULT_DATA=$(echo "${HTTP_BODY}" | jq -r .data)
 
 
 if ${waiting_for_test_results}; then
