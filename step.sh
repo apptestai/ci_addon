@@ -58,6 +58,7 @@ testset_name_len=${#testset_name}
 if [ $testset_name_len -gt 99 ]; then
   testset_name=$(echo ${testset_name} | cut -c1-99)
 fi
+testset_name=$(echo ${testset_name} | cut -d'\' -f 1)
 
 jq --version > /dev/null 2>&1 || install_jq 
 
