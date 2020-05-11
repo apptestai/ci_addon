@@ -55,5 +55,5 @@ commands:
            export login_pw=<<parameters.login_pw>>
            export test_result_path=<<parameters.test_result_path>> 
            export waiting_for_test_results=<<parameters.waiting_for_test_results>>
-           git clone https://github.com/forcemax/ci_addon
+           git clone https://github.com/apptestai/ci_addon
            bash ./ci_addon/step.sh
